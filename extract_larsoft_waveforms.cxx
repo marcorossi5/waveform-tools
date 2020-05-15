@@ -103,21 +103,29 @@ extract_larsoft_waveforms(std::string const& tag,
         if(iev<nskip) continue;
         if(iev>=nevents+nskip) break;
         if(triggerType!=-1){
-            auto& timestamp=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(InputTag{"timingrawdecoder:daq:DecoderandReco"});
+            auto& timestamp=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(
+                            InputTag{"timingrawdecoder:daq:DecoderandReco"});
             assert(timestamp.size()==1);
             if(timestamp[0].GetFlags()!=triggerType){
-                std::cout << "Skipping event " << ev.eventAuxiliary().event()  << " with trigger type " << timestamp[0].GetFlags() << std::endl;
+                std::cout << "Skipping event " << ev.eventAuxiliary().event()
+                          << " with trigger type " << timestamp[0].GetFlags()
+                          << std::endl;
+                
                 continue;
             }
             else{
-                std::cout << "Using event " << ev.eventAuxiliary().event()  << " with trigger type " << timestamp[0].GetFlags() << std::endl;
+                std::cout << "Using event " << ev.eventAuxiliary().event()
+                          << " with trigger type " << timestamp[0].GetFlags()
+                          << std::endl;
             }
         }
         std::cout << "Event " << ev.eventAuxiliary().id() << std::endl;
-        if(truth_outfile!=""){
+        /*if(truth_outfile!=""){
             //------------------------------------------------------------------
-            // Get the SimChannels so we can see where the actual energy depositions were
-            auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(InputTag{"largeant"});
+            // Get the SimChannels so we can see
+            //where the actual energy depositions were
+            auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
+                         InputTag{"largeant"});
         
             for(auto&& simch: simchs){
                 channelsWithSignal.insert(simch.Channel());
@@ -128,11 +136,47 @@ extract_larsoft_waveforms(std::string const& tag,
                             charge += ide.numElectrons;
                         } // for IDEs
                         auto const tdc = TDCinfo.first;
-                        trueIDEs.push_back(std::vector<float>{(float)iev, (float)simch.Channel(), (float)tdc, (float)charge});
+                        trueIDEs.push_back(std::vector<float>{(float)iev,
+                                                              (float)simch.Channel(),
+                                                              (float)tdc,
+                                                              (float)charge});
                     } // for TDCs
                 } // if fout_truth
             } // loop over SimChannels
-        }
+        }*/
+        if(truth_outfile!=""){
+            //------------------------------------------------------------------
+            // Get the SimChannels so we can see
+            //where the actual energy depositions were
+            auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
+                         InputTag{"largeant"});
+        
+            for(auto&& simch: simchs){
+                channelsWithSignal.insert(simch.Channel());
+                if(truth_outfile!=""){
+                    double charge=0;
+                    int tID;
+                    double energy;
+                    for (const auto& TDCinfo: simch.TDCIDEMap()) {
+                        auto const tdc = TDCinfo.first;
+                        for (const sim::IDE& ide: TDCinfo.second) {
+                            tID = ide.trackID;
+                            charge = ide.numElectrons;
+                            energy = ide.energy;
+                            trueIDEs.push_back(std::vector<float>{(float)iev,
+                                                              (float)simch.Channel(),
+                                                              (float)tdc,
+                                                              (float)tID,
+                                                              (float)charge,
+                                                              (float)energy,
+                                                              (float)ide.x,
+                                                              (float)ide.y,
+                                                              (float)ide.z});
+                        } // for IDEs
+                    } // for TDCs
+                } // if fout_truth
+            } // loop over SimChannels
+        }*
 
         int waveform_nsamples=-1;
         int n_truncated=0;
@@ -145,16 +189,22 @@ extract_larsoft_waveforms(std::string const& tag,
         }
         for(auto&& digit: digits){
 
-            if(onlySignal && channelsWithSignal.find(digit.Channel())==channelsWithSignal.end()){
+            if(onlySignal &&
+               channelsWithSignal.find(digit.Channel())==channelsWithSignal.end()){
                 continue;
             }
 
-            // Check that the waveform has the same number of samples as all the previous waveforms
+            // Check that the waveform has the same number of samples
+            //as all the previous waveforms
             if(waveform_nsamples<0){ waveform_nsamples=digit.Samples(); }
             else{
                 if(digit.Samples()!=waveform_nsamples){
                     if(n_truncated<10){
-                        std::cerr << "Channel " << digit.Channel() << " (offline APA " << (digit.Channel()/2560) << ") has " << digit.Samples() << " samples but all previous channels had " << waveform_nsamples << " samples" << std::endl;
+                        std::cerr << "Channel " << digit.Channel()
+                                  << " (offline APA " << (digit.Channel()/2560)
+                                  << ") has " << digit.Samples()
+                                  << " samples but all previous channels had "
+                                  << waveform_nsamples << " samples" << std::endl;
                     }
                     if(n_truncated==100){
                         std::cerr << "(More errors suppressed)" << std::endl;
@@ -173,7 +223,9 @@ extract_larsoft_waveforms(std::string const& tag,
             }
         } // end loop over digits (=?channels)
         if(n_truncated!=0){
-            std::cerr << "Truncated " << n_truncated << " channels with the wrong number of samples" << std::endl;
+            std::cerr << "Truncated " << n_truncated
+                      << " channels with the wrong number of samples"
+                      << std::endl;
         }
         std::string this_outfile(outfile);
         size_t dotpos=outfile.find_last_of(".");
@@ -182,13 +234,16 @@ extract_larsoft_waveforms(std::string const& tag,
         }
         std::ostringstream iss, timestampStr;
         if(timestampInFilename){
-            auto& rdtimestamps=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(InputTag{"timing:daq:RunRawDecoder"});
+            auto& rdtimestamps=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(
+                                InputTag{"timing:daq:RunRawDecoder"});
             assert(rdtimestamps.size()==1);
             // std::cout << "eventAuxiliary value is " << ev.eventAuxiliary().time().value() << std::endl;
             timestampStr << "_t0x" << std::hex << rdtimestamps[0].GetTimeStamp();
         }
-        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << timestampStr.str() <<  outfile.substr(dotpos, outfile.length()-dotpos);
-        std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
+        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event()
+            << timestampStr.str() <<  outfile.substr(dotpos, outfile.length()-dotpos);
+        std::cout << "Writing event " << ev.eventAuxiliary().event()
+                  << " to file " << iss.str() << std::endl;
         save_to_file<int>(iss.str(), samples, format, false);
         if(truth_outfile!="") save_to_file<float>(truth_outfile, trueIDEs, format, iev!=0);
         ++iev;
