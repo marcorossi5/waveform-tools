@@ -219,11 +219,12 @@ extract_larsoft_waveforms(std::string const& tag,
 
             samples.push_back({(int)ev.eventAuxiliary().event(), (int)digit.Channel()});
             for(size_t i=0; i<waveform_nsamples; ++i){
-                if clear{
-                    int sample=uncompressed[ std::min(i, uncompressed.size()-1) ]-digit.GetPedestal();
+                int sample;
+                if (clear){
+                    sample=uncompressed[ std::min(i, uncompressed.size()-1) ]-(int)(digit.GetPedestal());
                 }
                 else{
-                    int sample=uncompressed[ std::min(i, uncompressed.size()-1) ]   
+                    sample=uncompressed[ std::min(i, uncompressed.size()-1) ];
                 }
                 samples.back().push_back(sample);
             }
@@ -299,7 +300,6 @@ int main(int argc, char** argv)
                               vm["input"].as<string>(),
                               vm["output"].as<string>(),
                               vm["truth"].as<string>(),
-                              vm["clear"].as<string>(),
                               vm.count("numpy") ? Format::Numpy : Format::Text,
                               vm["nevent"].as<int>(),
                               vm["nskip"].as<int>(),
