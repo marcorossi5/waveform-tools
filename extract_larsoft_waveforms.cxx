@@ -88,7 +88,8 @@ extract_larsoft_waveforms(std::string const& tag,
                           Format format,
                           int nevents, int nskip, bool onlySignal,
                           int triggerType,
-                          bool timestampInFilename)
+                          bool timestampInFilename,
+                          bool clear)
 {
     InputTag daq_tag{ tag };
     // Create a vector of length 1, containing the given filename.
@@ -176,7 +177,7 @@ extract_larsoft_waveforms(std::string const& tag,
                     } // for TDCs
                 } // if fout_truth
             } // loop over SimChannels
-        }*
+        }
 
         int waveform_nsamples=-1;
         int n_truncated=0;
@@ -218,7 +219,12 @@ extract_larsoft_waveforms(std::string const& tag,
 
             samples.push_back({(int)ev.eventAuxiliary().event(), (int)digit.Channel()});
             for(size_t i=0; i<waveform_nsamples; ++i){
-                int sample=uncompressed[ std::min(i, uncompressed.size()-1) ];
+                if clear{
+                    int sample=uncompressed[ std::min(i, uncompressed.size()-1) ]-digit.GetPedestal();
+                }
+                else{
+                    int sample=uncompressed[ std::min(i, uncompressed.size()-1) ]   
+                }
                 samples.back().push_back(sample);
             }
         } // end loop over digits (=?channels)
@@ -265,6 +271,7 @@ int main(int argc, char** argv)
         ("onlysignal", "only output channels with true signal")
         ("trig", po::value<int>()->default_value(-1), "select events with given trigger type")
         ("ts", "add event timestamp to filename")
+        ("clear", "subtract pedestal")
         ;
 
     po::variables_map vm;
@@ -292,12 +299,14 @@ int main(int argc, char** argv)
                               vm["input"].as<string>(),
                               vm["output"].as<string>(),
                               vm["truth"].as<string>(),
+                              vm["clear"].as<string>(),
                               vm.count("numpy") ? Format::Numpy : Format::Text,
                               vm["nevent"].as<int>(),
                               vm["nskip"].as<int>(),
                               vm.count("onlysignal"),
                               vm["trig"].as<int>(),
-                              vm.count("ts"));
+                              vm.count("ts"),
+                              vm.count("clear"));
     return 0;
 }
 
