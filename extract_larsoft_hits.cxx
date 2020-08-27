@@ -179,19 +179,22 @@ extract_larsoft_hits(std::string const& tag,
                     (float)ev.eventAuxiliary().event(), (float)wire.Channel()
                         });
             for(size_t i=0; i<waveform_nsamples; ++i){
-                samples_w.back().push_back(wire[i]);
+                float sample_w;
+                sample_w = wire.Signal()[i];
+                samples_w.back().push_back(sample_w);
             }
         } // end loop over digits (=?channels)
-        std::string this_outfile(wire_outfile);
-        size_t dotpos=wire_outfile.find_last_of(".");
-        if(dotpos==std::string::npos){
-            dotpos=wire_outfile.length();
-        }
-        std::ostringstream iss;
 
-        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << "_t0x" << wire_outfile.substr(dotpos, wire.outfile.length()-dotpos);
-        std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
-        save_to_file<int>(iss.str(), samples_w, format, false);
+        std::string this_outfile_w(wire_outfile);
+        size_t dotpos_w=wire_outfile.find_last_of(".");
+        if(dotpos_w==std::string::npos){
+            dotpos_w=wire_outfile.length();
+        }
+        std::ostringstream iss_w;
+
+        iss_w << wire_outfile.substr(0, dotpos_w) << "_evt" << ev.eventAuxiliary().event() << "_t0x" << wire_outfile.substr(dotpos_w, wire_outfile.length()-dotpos_w);
+        std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss_w.str() << std::endl;
+        save_to_file<float>(iss_w.str(), samples_w, format, false);
         
         ++iev;
     } // end loop over events
