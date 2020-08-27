@@ -15,6 +15,7 @@
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RawData/RDTimeStamp.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
 
 #include "cnpy.h"
 
@@ -85,17 +86,20 @@ void
 extract_larsoft_hits(std::string const& tag,
                      std::string const& filename,
                      std::string const& outfile,
+                     std::string const& wire_outfile,
                      Format format,
                      int nevents, int nskip,
                      int triggerType)
 {
     InputTag daq_tag{ tag };
+    InputTag wires_tag{ "wclsdatanfsp:gauss:Reco" };
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
 
     int iev=0;
     for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
         vector<vector<int> > samples;
+        vector<vector<float> > samples_w;
 
         if(iev<nskip) continue;
         if(iev>=nevents+nskip) break;
@@ -119,6 +123,7 @@ extract_larsoft_hits(std::string const& tag,
         if(hits.empty()){
             std::cout << "Hits vector is empty" << std::endl;
         }
+
         for(auto&& hit: hits){
             samples.push_back({
                     (int)hit.Channel(), hit.StartTick(), hit.EndTick(), (int)hit.SummedADC(), (int)hit.RMS()
@@ -136,6 +141,58 @@ extract_larsoft_hits(std::string const& tag,
         iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << "_t0x" << outfile.substr(dotpos, outfile.length()-dotpos);
         std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
         save_to_file<int>(iss.str(), samples, format, false);
+
+        //------------------------------------------------------------------
+        // Look at the wires
+        auto& wires =
+            *ev.getValidHandle<vector<recob::Wire>>(wires_tag);
+        if(wires.empty()){
+            std::cout << "Wire vector is empty" << std::endl;
+        }
+
+        int waveform_nsamples=-1;
+        int n_truncated=0;
+
+        for(auto&& wire: wires){
+
+        	//Check that the waveform has the same number of samples
+            //as all the previous waveforms
+            if(waveform_nsamples<0){ waveform_nsamples=(int)wire.NSignal(); }
+            else{
+                if((int)wire.NSignal()!=waveform_nsamples){
+                    if(n_truncated<10){
+                        std::cerr << "Channel " << wire.Channel()
+                                  << " (offline APA " << (wire.Channel()/2560)
+                                  << ") has " << wire.NSignal()
+                                  << " samples but all previous channels had "
+                                  << waveform_nsamples << " samples" << std::endl;
+                    }
+                    if(n_truncated==100){
+                        std::cerr << "(More errors suppressed)" << std::endl;
+                    }
+                    ++n_truncated;
+                }
+            }
+
+
+            samples_w.push_back({
+                    (float)ev.eventAuxiliary().event(), (float)wire.Channel()
+                        });
+            for(size_t i=0; i<waveform_nsamples; ++i){
+                samples_w.back().push_back(wire[i]);
+            }
+        } // end loop over digits (=?channels)
+        std::string this_outfile(wire_outfile);
+        size_t dotpos=wire_outfile.find_last_of(".");
+        if(dotpos==std::string::npos){
+            dotpos=wire_outfile.length();
+        }
+        std::ostringstream iss;
+
+        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << "_t0x" << wire_outfile.substr(dotpos, wire.outfile.length()-dotpos);
+        std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
+        save_to_file<int>(iss.str(), samples_w, format, false);
+        
         ++iev;
     } // end loop over events
 }
@@ -147,6 +204,7 @@ int main(int argc, char** argv)
         ("help,h", "produce help message")
         ("input,i", po::value<string>(), "input file name")
         ("output,o", po::value<string>(), "base output file name. Individual output files will be created for each event, with \"_evtN\" inserted before the extension, or at the end if there is no extension")
+        ("wire_output,w", po::value<string>(), "base wire output file name")
         ("tag,g", po::value<string>()->default_value("daq"), "input tag (aka \"module label\") of input digits")
         ("nevent,n", po::value<int>()->default_value(1), "number of events to save")
         ("nskip,k", po::value<int>()->default_value(0), "number of events to skip")
@@ -178,6 +236,7 @@ int main(int argc, char** argv)
     extract_larsoft_hits(vm["tag"].as<string>(),
                          vm["input"].as<string>(),
                          vm["output"].as<string>(),
+                         vm["wire_output"].as<string>(),
                          vm.count("numpy") ? Format::Numpy : Format::Text,
                          vm["nevent"].as<int>(),
                          vm["nskip"].as<int>(),
