@@ -130,10 +130,10 @@ extract_larsoft_hits(std::string const& tag,
             dotpos=outfile.length();
         }
         std::ostringstream iss;
-        auto& rdtimestamps=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(InputTag{"timing:daq:RunRawDecoder"});
-        assert(rdtimestamps.size()==1);
+        //auto& rdtimestamps=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(InputTag{"timing:daq:RunRawDecoder"});
+        //assert(rdtimestamps.size()==1);
 
-        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << "_t0x" << std::hex << rdtimestamps[0].GetTimeStamp() << outfile.substr(dotpos, outfile.length()-dotpos);
+        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << "_t0x" << outfile.substr(dotpos, outfile.length()-dotpos);
         std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
         save_to_file<int>(iss.str(), samples, format, false);
         ++iev;
