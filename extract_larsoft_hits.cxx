@@ -90,8 +90,7 @@ extract_larsoft_hits(std::string const& tag,
                      int nevents, int nskip,
                      int triggerType)
 {
-    InputTag gaushit_tag{ tag0 };
-    InputTag wires_tag{ tag1 };
+    InputTag gaushit_tag{ tag };
     std::string ext = (format==Format::Text) ? ".txt" :	".npy";
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);

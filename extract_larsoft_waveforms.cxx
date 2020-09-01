@@ -117,17 +117,15 @@ extract_larsoft_waveforms(std::string const& tag,
         }
         std::cout << "Event " << ev.eventAuxiliary().id() << std::endl;
 
-        if(truth_outfile!=""){
-            //------------------------------------------------------------------
-            // Get the SimChannels so we can see
-            //where the actual energy depositions were
-            auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
-                         InputTag{simchtag});
+        //------------------------------------------------------------------
+        // Get the SimChannels so we can see
+        //where the actual energy depositions were
+        auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
+                     InputTag{simch_tag});
         
-            for(auto&& simch: simchs){
-                channelsWithSignal.insert(simch.Channel());
-            } // loop over SimChannels
-        }
+        for(auto&& simch: simchs){
+            channelsWithSignal.insert(simch.Channel());
+        } // loop over SimChannels
 
         int waveform_nsamples=-1;
         int n_truncated=0;
@@ -202,7 +200,6 @@ extract_larsoft_waveforms(std::string const& tag,
         std::cout << "Writing event " << ev.eventAuxiliary().event()
                   << " to file " << iss.str() << std::endl;
         save_to_file<int>(iss.str(), samples, format, false);
-        if(truth_outfile!="") save_to_file<float>(truth_outfile, trueIDEs, format, iev!=0);
         ++iev;
     } // end loop over events
 }
@@ -214,7 +211,6 @@ int main(int argc, char** argv)
         ("help,h", "produce help message")
         ("input,i", po::value<string>(), "input file name")
         ("output,o", po::value<string>(), "base output file name. Individual output files will be created for each event, with \"_evtN\" inserted before the extension, or at the end if there is no extension")
-        ("truth,t", po::value<string>()->default_value(""), "truth output file name")
         ("tag, g", po::value<string>()->default_value("tpcrawdecoder:daq:DetsimStage1"),
                    "input tag (aka \"module label:product instance name: process name\") for raw::RawDigits")
         ("nevent,n", po::value<int>()->default_value(1), "number of events to save")
@@ -247,11 +243,9 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    extract_larsoft_waveforms(vm["tag0"].as<string>(),
-                              vm["tag1"].as<string>(),
+    extract_larsoft_waveforms(vm["tag"].as<string>(),
                               vm["input"].as<string>(),
                               vm["output"].as<string>(),
-                              vm["truth"].as<string>(),
                               vm.count("numpy") ? Format::Numpy : Format::Text,
                               vm["nevent"].as<int>(),
                               vm["nskip"].as<int>(),

@@ -203,14 +203,13 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    extract_larsoft_waveforms(vm["tag0"].as<string>(),
-                              vm["tag1"].as<string>(),
+    extract_larsoft_waveforms(vm["tag"].as<string>(),
                               vm["input"].as<string>(),
                               vm["output"].as<string>(),
                               vm.count("numpy") ? Format::Numpy : Format::Text,
                               vm["nevent"].as<int>(),
                               vm["nskip"].as<int>(),
                               vm["trig"].as<int>(),
-                              vm.count("ts");
+                              vm.count("ts"));
     return 0;
 }

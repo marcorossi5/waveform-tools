@@ -158,12 +158,12 @@ extract_larsoft_hits(std::string const& tag,
         if(dotpos==std::string::npos){
             dotpos=outfile.length();
         }
-        std::ostringstream iss_w;
+        std::ostringstream iss;
 
-        iss_w << wire_outfile.substr(0, dotpos) << "_evt"<< ev.eventAuxiliary().event()
+        iss << this_outfile.substr(0, dotpos) << "_evt"<< ev.eventAuxiliary().event()
               << outfile.substr(dotpos, outfile.length()-dotpos) << ext;
         std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
-        save_to_file<float>(iss.str(), samples, format, false);
+        save_to_file<int>(iss.str(), samples, format, false);
         
         ++iev;
     } // end loop over events
