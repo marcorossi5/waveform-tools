@@ -124,10 +124,10 @@ extract_larsoft_hits(std::string const& tag,
 
         int waveform_nsamples=-1;
         int n_truncated=0;
-
+        
         for(auto&& wire: wires){
-
-        	//Check that the waveform has the same number of samples
+            /*
+            //Check that the waveform has the same number of samples
             //as all the previous waveforms
             if(waveform_nsamples<0){ waveform_nsamples=(int)wire.NSignal(); }
             else{
@@ -145,7 +145,7 @@ extract_larsoft_hits(std::string const& tag,
                     ++n_truncated;
                 }
             }
-
+            */
 
             samples.push_back({
                     (float)ev.eventAuxiliary().event(), (float)wire.Channel()

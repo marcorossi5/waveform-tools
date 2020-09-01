@@ -76,6 +76,7 @@ void save_to_file(std::string const& outfile,
 // event_no channel_no sample_0 sample_1 ... sample_N
 void
 extract_larsoft_waveforms(std::string const& tag,
+                          std::string const& tag_sim,
                           std::string const& filename,
                           std::string const& outfile,
                           Format format,
@@ -85,7 +86,7 @@ extract_larsoft_waveforms(std::string const& tag,
                           bool clear)
 {
     InputTag daq_tag{ tag };
-    InputTag simch_tag{ "tpcrawdecoder:simpleSC:Detsim" };
+    InputTag simch_tag{ tag_sim };
     std::string ext = (format==Format::Text) ? ".txt" : ".npy";
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
@@ -213,6 +214,8 @@ int main(int argc, char** argv)
         ("output,o", po::value<string>(), "base output file name. Individual output files will be created for each event, with \"_evtN\" inserted before the extension, or at the end if there is no extension")
         ("tag, g", po::value<string>()->default_value("tpcrawdecoder:daq:DetsimStage1"),
                    "input tag (aka \"module label:product instance name: process name\") for raw::RawDigits")
+        ("tag_sim, s", po::value<string>()->default_value("tpcrawdecoder:simpleSC:Detsim"),
+                   "input tag (aka \"module label:product instance name: process name\") for sim::SimChannels")
         ("nevent,n", po::value<int>()->default_value(1), "number of events to save")
         ("nskip,k", po::value<int>()->default_value(0), "number of events to skip")
         ("numpy", "use numpy output format instead of text")
@@ -244,6 +247,7 @@ int main(int argc, char** argv)
     }
 
     extract_larsoft_waveforms(vm["tag"].as<string>(),
+                              vm["tag_sim"].as<string>(),
                               vm["input"].as<string>(),
                               vm["output"].as<string>(),
                               vm.count("numpy") ? Format::Numpy : Format::Text,

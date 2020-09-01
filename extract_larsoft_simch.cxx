@@ -117,7 +117,7 @@ extract_larsoft_waveforms(std::string const& tag,
         // Get the SimChannels so we can see
         //where the actual energy depositions were
         auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
-                     InputTag{"tpcrawdecoder:simpleSC:Detsim"});
+                     InputTag{simch_tag});
         
         for(auto&& simch: simchs){
             channelsWithSignal.insert(simch.Channel());
