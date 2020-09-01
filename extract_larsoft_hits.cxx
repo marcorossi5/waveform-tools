@@ -83,7 +83,8 @@ void save_to_file(std::string const& outfile,
 //
 // event_no channel_no tdc total_charge
 void
-extract_larsoft_hits(std::string const& tag,
+extract_larsoft_hits(std::string const& tag0,
+                     std::string const& tag1,
                      std::string const& filename,
                      std::string const& outfile,
                      std::string const& wire_outfile,
@@ -91,8 +92,8 @@ extract_larsoft_hits(std::string const& tag,
                      int nevents, int nskip,
                      int triggerType)
 {
-    InputTag daq_tag{ tag };
-    InputTag wires_tag{ "wclsdatanfsp:gauss:Reco" };
+    InputTag gaushit_tag{ tag0 };
+    InputTag wires_tag{ tag1 };
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
 
@@ -119,7 +120,7 @@ extract_larsoft_hits(std::string const& tag,
         //------------------------------------------------------------------
         // Look at the hits
         auto& hits =
-            *ev.getValidHandle<vector<recob::Hit>>(daq_tag);
+            *ev.getValidHandle<vector<recob::Hit>>(gaushit_tag);
         if(hits.empty()){
             std::cout << "Hits vector is empty" << std::endl;
         }
@@ -178,11 +179,7 @@ extract_larsoft_hits(std::string const& tag,
             samples_w.push_back({
                     (float)ev.eventAuxiliary().event(), (float)wire.Channel()
                         });
-            for(size_t i=0; i<waveform_nsamples; ++i){
-                float sample_w;
-                sample_w = wire.Signal()[i];
-                samples_w.back().push_back(sample_w);
-            }
+            for(size_t i=0; i<waveform_nsamples; ++i){ samples_w.back().push_back(wire.Signal()[i]); }
         } // end loop over digits (=?channels)
 
         std::string this_outfile_w(wire_outfile);
@@ -208,7 +205,8 @@ int main(int argc, char** argv)
         ("input,i", po::value<string>(), "input file name")
         ("output,o", po::value<string>(), "base output file name. Individual output files will be created for each event, with \"_evtN\" inserted before the extension, or at the end if there is no extension")
         ("wire_output,w", po::value<string>(), "base wire output file name")
-        ("tag,g", po::value<string>()->default_value("daq"), "input tag (aka \"module label\") of input digits")
+        ("tag0,g", po::value<string>()->default_value("gaushit::Reco"), "input tag (aka \"module label\") of input digits")
+        ("tag1,j", po::value<string>()->default_value("wclsdatanfsp:gauss:Reco"), "input tag (aka \"module label\") of input digits")
         ("nevent,n", po::value<int>()->default_value(1), "number of events to save")
         ("nskip,k", po::value<int>()->default_value(0), "number of events to skip")
         ("numpy", "use numpy output format instead of text")
@@ -236,7 +234,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    extract_larsoft_hits(vm["tag"].as<string>(),
+    extract_larsoft_hits(vm["tag0"].as<string>(),
+                         vm["tag1"].as<string>(),
                          vm["input"].as<string>(),
                          vm["output"].as<string>(),
                          vm["wire_output"].as<string>(),

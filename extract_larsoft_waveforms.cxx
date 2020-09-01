@@ -81,7 +81,8 @@ void save_to_file(std::string const& outfile,
 //
 // event_no channel_no tdc total_charge
 void
-extract_larsoft_waveforms(std::string const& tag,
+extract_larsoft_waveforms(std::string const& tag0,
+                          std::string const& tag1,
                           std::string const& filename,
                           std::string const& outfile,
                           std::string const& truth_outfile,
@@ -91,7 +92,8 @@ extract_larsoft_waveforms(std::string const& tag,
                           bool timestampInFilename,
                           bool clear)
 {
-    InputTag daq_tag{ tag };
+    InputTag daq_tag{ tag0 };
+    InputTag simch_tag{ tag1 };
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
 
@@ -126,7 +128,7 @@ extract_larsoft_waveforms(std::string const& tag,
             // Get the SimChannels so we can see
             //where the actual energy depositions were
             auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
-                         InputTag{"largeant"});
+                         simch_tag);
         
             for(auto&& simch: simchs){
                 channelsWithSignal.insert(simch.Channel());
@@ -150,7 +152,7 @@ extract_larsoft_waveforms(std::string const& tag,
             // Get the SimChannels so we can see
             //where the actual energy depositions were
             auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
-                         InputTag{"largeant"});
+                         InputTag{"tpcrawdecoder:simpleSC:Detsim"});
         
             for(auto&& simch: simchs){
                 channelsWithSignal.insert(simch.Channel());
@@ -265,7 +267,8 @@ int main(int argc, char** argv)
         ("input,i", po::value<string>(), "input file name")
         ("output,o", po::value<string>(), "base output file name. Individual output files will be created for each event, with \"_evtN\" inserted before the extension, or at the end if there is no extension")
         ("truth,t", po::value<string>()->default_value(""), "truth output file name")
-        ("tag,g", po::value<string>()->default_value("daq"), "input tag (aka \"module label\") of input digits")
+        ("tag0,g", po::value<string>()->default_value("tpcrawdecoder:daq:DetsimStage1"), "input tag (aka \"module label\") of input digits")
+        ("tag1,j", po::value<string>()->default_value("tpcrawdecoder:simpleSC:DetsimStage1"), "input tag (aka \"module label\") of simchannels")
         ("nevent,n", po::value<int>()->default_value(1), "number of events to save")
         ("nskip,k", po::value<int>()->default_value(0), "number of events to skip")
         ("numpy", "use numpy output format instead of text")
@@ -296,7 +299,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    extract_larsoft_waveforms(vm["tag"].as<string>(),
+    extract_larsoft_waveforms(vm["tag0"].as<string>(),
+                              vm["tag1"].as<string>(),
                               vm["input"].as<string>(),
                               vm["output"].as<string>(),
                               vm["truth"].as<string>(),
