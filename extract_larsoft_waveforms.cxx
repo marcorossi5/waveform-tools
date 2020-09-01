@@ -38,7 +38,7 @@ void save_to_file(std::string const& outfile,
     case Format::Text:
     {
         // Open in append mode because we 
-        std::ofstream fout(outfile, append ? ios::app : ios_base::out);
+        std::ofstream fout(outfile.append(".npy"), append ? ios::app : ios_base::out);
         for(auto const& v1 : v){
             for(auto const& s : v1){
                 fout << s << " ";
@@ -60,40 +60,32 @@ void save_to_file(std::string const& outfile,
                 tmp.push_back(s);
             }
         }
-        cnpy::npy_save(outfile, &tmp[0], {v.size(), v[0].size()}, append ? "a" : "w");
+        cnpy::npy_save(outfile.append(".npy"), &tmp[0], {v.size(), v[0].size()}, append ? "a" : "w");
     }
     break;
     }
 }
 
 // Write `nevents` events of data from `filename` to text files. The
-// raw waveforms are written to `outfile`, while the true energy
-// depositions are written to `truth_outfile` (unless it is an empty
-// string, in which case no truth file is produced). If `onlySignal`
+// raw waveforms are written to `outfile`. If `onlySignal`
 // is true, then only channels with some true energy deposition are
 // written out; otherwise all channels are written out.
 // 
 // Each line in `outfile` has the format:
 //
 // event_no channel_no sample_0 sample_1 ... sample_N
-//
-// Each line in `truth_outfile` has the format
-//
-// event_no channel_no tdc total_charge
 void
-extract_larsoft_waveforms(std::string const& tag0,
-                          std::string const& tag1,
+extract_larsoft_waveforms(std::string const& tag,
                           std::string const& filename,
                           std::string const& outfile,
-                          std::string const& truth_outfile,
                           Format format,
                           int nevents, int nskip, bool onlySignal,
                           int triggerType,
                           bool timestampInFilename,
                           bool clear)
 {
-    InputTag daq_tag{ tag0 };
-    InputTag simch_tag{ tag1 };
+    InputTag daq_tag{ tag };
+    InputTag simch_tag{ "tpcrawdecoder:simpleSC:Detsim" };
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
 
@@ -123,61 +115,16 @@ extract_larsoft_waveforms(std::string const& tag0,
             }
         }
         std::cout << "Event " << ev.eventAuxiliary().id() << std::endl;
-        /*if(truth_outfile!=""){
-            //------------------------------------------------------------------
-            // Get the SimChannels so we can see
-            //where the actual energy depositions were
-            auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
-                         simch_tag);
-        
-            for(auto&& simch: simchs){
-                channelsWithSignal.insert(simch.Channel());
-                if(truth_outfile!=""){
-                    double charge=0;
-                    for (const auto& TDCinfo: simch.TDCIDEMap()) {
-                        for (const sim::IDE& ide: TDCinfo.second) {
-                            charge += ide.numElectrons;
-                        } // for IDEs
-                        auto const tdc = TDCinfo.first;
-                        trueIDEs.push_back(std::vector<float>{(float)iev,
-                                                              (float)simch.Channel(),
-                                                              (float)tdc,
-                                                              (float)charge});
-                    } // for TDCs
-                } // if fout_truth
-            } // loop over SimChannels
-        }*/
+
         if(truth_outfile!=""){
             //------------------------------------------------------------------
             // Get the SimChannels so we can see
             //where the actual energy depositions were
             auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
-                         InputTag{"tpcrawdecoder:simpleSC:Detsim"});
+                         InputTag{simchtag});
         
             for(auto&& simch: simchs){
                 channelsWithSignal.insert(simch.Channel());
-                if(truth_outfile!=""){
-                    double charge=0;
-                    int tID;
-                    double energy;
-                    for (const auto& TDCinfo: simch.TDCIDEMap()) {
-                        auto const tdc = TDCinfo.first;
-                        for (const sim::IDE& ide: TDCinfo.second) {
-                            tID = ide.trackID;
-                            charge = ide.numElectrons;
-                            energy = ide.energy;
-                            trueIDEs.push_back(std::vector<float>{(float)iev,
-                                                              (float)simch.Channel(),
-                                                              (float)tdc,
-                                                              (float)tID,
-                                                              (float)charge,
-                                                              (float)energy,
-                                                              (float)ide.x,
-                                                              (float)ide.y,
-                                                              (float)ide.z});
-                        } // for IDEs
-                    } // for TDCs
-                } // if fout_truth
             } // loop over SimChannels
         }
 
@@ -185,8 +132,7 @@ extract_larsoft_waveforms(std::string const& tag0,
         int n_truncated=0;
         //------------------------------------------------------------------
         // Look at the digits (ie, TPC waveforms)
-        auto& digits =
-            *ev.getValidHandle<vector<raw::RawDigit>>(daq_tag);
+        auto& digits = *ev.getValidHandle<vector<raw::RawDigit>>(daq_tag);
         if(digits.empty()){
             std::cout << "Digits vector is empty" << std::endl;
         }
@@ -231,6 +177,7 @@ extract_larsoft_waveforms(std::string const& tag0,
                 samples.back().push_back(sample);
             }
         } // end loop over digits (=?channels)
+
         if(n_truncated!=0){
             std::cerr << "Truncated " << n_truncated
                       << " channels with the wrong number of samples"
@@ -267,8 +214,8 @@ int main(int argc, char** argv)
         ("input,i", po::value<string>(), "input file name")
         ("output,o", po::value<string>(), "base output file name. Individual output files will be created for each event, with \"_evtN\" inserted before the extension, or at the end if there is no extension")
         ("truth,t", po::value<string>()->default_value(""), "truth output file name")
-        ("tag0,g", po::value<string>()->default_value("tpcrawdecoder:daq:DetsimStage1"), "input tag (aka \"module label\") of input digits")
-        ("tag1,j", po::value<string>()->default_value("tpcrawdecoder:simpleSC:DetsimStage1"), "input tag (aka \"module label\") of simchannels")
+        ("tag, g", po::value<string>()->default_value("tpcrawdecoder:daq:DetsimStage1"),
+                   "input tag (aka \"module label:product instance name: process name\") for raw::RawDigits")
         ("nevent,n", po::value<int>()->default_value(1), "number of events to save")
         ("nskip,k", po::value<int>()->default_value(0), "number of events to skip")
         ("numpy", "use numpy output format instead of text")
@@ -313,7 +260,3 @@ int main(int argc, char** argv)
                               vm.count("clear"));
     return 0;
 }
-
-// Local Variables:
-// c-basic-offset: 4
-// End:
