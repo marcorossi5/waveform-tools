@@ -89,6 +89,7 @@ extract_photon_waveforms(std::string const& tag,
     InputTag daq_tag{ tag };
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
+    std::string ext = (format==Format::Text) ? ".txt" :	".npy";
 
     int iev=0;
     for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
@@ -144,7 +145,7 @@ extract_photon_waveforms(std::string const& tag,
             // std::cout << "eventAuxiliary value is " << ev.eventAuxiliary().time().value() << std::endl;
             timestampStr << "_t0x" << std::hex << rdtimestamps[0].GetTimeStamp();
         }
-        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << timestampStr.str() <<  outfile.substr(dotpos, outfile.length()-dotpos);
+        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << timestampStr.str() <<  outfile.substr(dotpos, outfile.length()-dotpos) << ext;
         std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
         save_to_file<int>(iss.str(), samples, format, false);
         ++iev;

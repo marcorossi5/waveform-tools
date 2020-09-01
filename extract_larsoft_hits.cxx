@@ -40,7 +40,7 @@ void save_to_file(std::string const& outfile,
     case Format::Text:
     {
         // Open in append mode because we 
-        std::ofstream fout(outfile.append(".txt"), append ? ios::app : ios_base::out);
+        std::ofstream fout(outfile, append ? ios::app : ios_base::out);
         for(auto const& v1 : v){
             for(auto const& s : v1){
                 fout << s << " ";
@@ -62,7 +62,7 @@ void save_to_file(std::string const& outfile,
                 tmp.push_back(s);
             }
         }
-        cnpy::npy_save(outfile.append(".npy"), &tmp[0], {v.size(), v[0].size()}, append ? "a" : "w");
+        cnpy::npy_save(outfile, &tmp[0], {v.size(), v[0].size()}, append ? "a" : "w");
     }
     break;
     }
@@ -92,6 +92,7 @@ extract_larsoft_hits(std::string const& tag,
 {
     InputTag gaushit_tag{ tag0 };
     InputTag wires_tag{ tag1 };
+    std::string ext = (format==Format::Text) ? ".txt" :	".npy";
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
 
@@ -136,7 +137,7 @@ extract_larsoft_hits(std::string const& tag,
         //auto& rdtimestamps=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(InputTag{"timing:daq:RunRawDecoder"});
         //assert(rdtimestamps.size()==1);
 
-        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << outfile.substr(dotpos, outfile.length()-dotpos);
+        iss << outfile.substr(0, dotpos) << "_evt" << ev.eventAuxiliary().event() << outfile.substr(dotpos, outfile.length()-dotpos) << ext;
         std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
         save_to_file<int>(iss.str(), samples, format, false);
 

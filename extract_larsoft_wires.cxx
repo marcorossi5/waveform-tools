@@ -40,7 +40,7 @@ void save_to_file(std::string const& outfile,
     case Format::Text:
     {
         // Open in append mode because we 
-        std::ofstream fout(outfile.append(".npy"), append ? ios::app : ios_base::out);
+        std::ofstream fout(outfile, append ? ios::app : ios_base::out);
         for(auto const& v1 : v){
             for(auto const& s : v1){
                 fout << s << " ";
@@ -62,7 +62,7 @@ void save_to_file(std::string const& outfile,
                 tmp.push_back(s);
             }
         }
-        cnpy::npy_save(outfile.append(".npy"), &tmp[0], {v.size(), v[0].size()}, append ? "a" : "w");
+        cnpy::npy_save(outfile, &tmp[0], {v.size(), v[0].size()}, append ? "a" : "w");
     }
     break;
     }
@@ -93,6 +93,7 @@ extract_larsoft_hits(std::string const& tag,
     InputTag wires_tag{ tag };
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
+    std::string ext = (format==Format::Text) ? ".txt" :	".npy";
 
     int iev=0;
     for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {

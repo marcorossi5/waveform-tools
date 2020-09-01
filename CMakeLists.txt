@@ -29,13 +29,13 @@ add_executable(extract_photon_waveforms extract_photon_waveforms.cxx cnpy.cpp)
 set_property(TARGET extract_photon_waveforms PROPERTY CXX_STANDARD 17)
 target_link_libraries(extract_photon_waveforms ${MY_LIBS})
 
-add_executable(extract_larsoft_waveforms extract_larsoft_wires.cxx cnpy.cpp)
+add_executable(extract_larsoft_wires extract_larsoft_wires.cxx cnpy.cpp)
 set_property(TARGET extract_larsoft_wires PROPERTY CXX_STANDARD 17)
 target_link_libraries(extract_larsoft_wires ${MY_LIBS})
 
-add_executable(extract_larsoft_waveforms extract_larsoft_hits.cxx cnpy.cpp)
-set_property(TARGET extract_larsoft_hits PROPERTY CXX_STANDARD 17)
-target_link_libraries(extract_larsoft_hits ${MY_LIBS})
+add_executable(extract_larsoft_simch extract_larsoft_simch.cxx cnpy.cpp)
+set_property(TARGET extract_larsoft_simch PROPERTY CXX_STANDARD 17)
+target_link_libraries(extract_larsoft_simch ${MY_LIBS})
 
 
 add_subdirectory(test)
