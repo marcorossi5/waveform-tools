@@ -99,7 +99,10 @@ extract_larsoft_hits(std::string const& tag,
     for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
         vector<vector<int> > samples;
 
-        if(iev<nskip) continue;
+        if(iev<nskip) {
+           ++iev;
+           continue;
+        }
         if(iev>=nevents+nskip) break;
         if(triggerType!=-1){
             auto& timestamp=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(InputTag{"timingrawdecoder:daq:DecoderandReco"});
@@ -126,7 +129,7 @@ extract_larsoft_hits(std::string const& tag,
         int n_truncated=0;
         
         for(auto&& wire: wires){
-            /*
+            
             //Check that the waveform has the same number of samples
             //as all the previous waveforms
             if(waveform_nsamples<0){ waveform_nsamples=(int)wire.NSignal(); }
@@ -145,12 +148,16 @@ extract_larsoft_hits(std::string const& tag,
                     ++n_truncated;
                 }
             }
-            */
+            
 
             samples.push_back({
                     (float)ev.eventAuxiliary().event(), (float)wire.Channel()
                         });
-            for(size_t i=0; i<waveform_nsamples; ++i){ samples.back().push_back(wire.Signal()[i]); }
+            float sample;
+            for(size_t i=0; i<waveform_nsamples; ++i){
+                sample = wire.Signal()[std::min((int)i, waveform_nsamples-1)];
+                samples.back().push_back(sample);
+            }
         } // end loop over digits (=?channels)
 
         std::string this_outfile(outfile);
