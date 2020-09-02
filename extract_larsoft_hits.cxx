@@ -99,7 +99,10 @@ extract_larsoft_hits(std::string const& tag,
     for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
         vector<vector<int> > samples;
 
-        if(iev<nskip) continue;
+        if(iev<nskip) {
+           ++iev;
+           continue;
+        }
         if(iev>=nevents+nskip) break;
         if(triggerType!=-1){
             auto& timestamp=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(InputTag{"timingrawdecoder:daq:DecoderandReco"});

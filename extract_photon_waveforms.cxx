@@ -98,7 +98,10 @@ extract_photon_waveforms(std::string const& tag,
         size_t waveform_nsamples=0;
         size_t n_truncated=0;
 
-        if(iev<nskip) continue;
+        if(iev<nskip) {
+           ++iev;
+           continue;
+        }
         if(iev>=nevents+nskip) break;
 
         std::cout << "Event " << ev.eventAuxiliary().id() << std::endl;

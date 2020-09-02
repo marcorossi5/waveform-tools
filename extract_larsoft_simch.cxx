@@ -93,7 +93,10 @@ extract_larsoft_waveforms(std::string const& tag,
         vector<vector<float> > trueIDEs;
 
         std::set<int> channelsWithSignal;
-        if(iev<nskip) continue;
+        if(iev<nskip) {
+           ++iev;
+           continue;
+        }
         if(iev>=nevents+nskip) break;
         if(triggerType!=-1){
             auto& timestamp=*ev.getValidHandle<std::vector<raw::RDTimeStamp>>(
