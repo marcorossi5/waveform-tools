@@ -11,7 +11,6 @@
 #include "canvas/Utilities/InputTag.h"
 #include "gallery/Event.h"
 
-#include "lardataobj/Simulation/SimChannel.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RawData/raw.h"
 #include "lardataobj/RawData/RDTimeStamp.h"
@@ -67,26 +66,22 @@ void save_to_file(std::string const& outfile,
 }
 
 // Write `nevents` events of data from `filename` to text files. The
-// raw waveforms are written to `outfile`. If `onlySignal`
-// is true, then only channels with some true energy deposition are
-// written out; otherwise all channels are written out.
+// raw waveforms are written to `outfile`. All channels are written out.
 // 
 // Each line in `outfile` has the format:
 //
 // event_no channel_no sample_0 sample_1 ... sample_N
 void
 extract_larsoft_waveforms(std::string const& tag,
-                          std::string const& tag_sim,
                           std::string const& filename,
                           std::string const& outfile,
                           Format format,
-                          int nevents, int nskip, bool onlySignal,
+                          int nevents, int nskip,
                           int triggerType,
                           bool timestampInFilename,
                           bool clear)
 {
     InputTag daq_tag{ tag };
-    InputTag simch_tag{ tag_sim };
     std::string ext = (format==Format::Text) ? ".txt" : ".npy";
     // Create a vector of length 1, containing the given filename.
     vector<string> filenames(1, filename);
@@ -96,7 +91,6 @@ extract_larsoft_waveforms(std::string const& tag,
         vector<vector<int> > samples;
         vector<vector<float> > trueIDEs;
 
-        std::set<int> channelsWithSignal;
         if(iev<nskip) {
            ++iev;
            continue;
@@ -121,16 +115,6 @@ extract_larsoft_waveforms(std::string const& tag,
         }
         std::cout << "Event " << ev.eventAuxiliary().id() << std::endl;
 
-        //------------------------------------------------------------------
-        // Get the SimChannels so we can see
-        //where the actual energy depositions were
-        auto& simchs=*ev.getValidHandle<std::vector<sim::SimChannel>>(
-                     InputTag{simch_tag});
-        
-        for(auto&& simch: simchs){
-            channelsWithSignal.insert(simch.Channel());
-        } // loop over SimChannels
-
         int waveform_nsamples=-1;
         int n_truncated=0;
         //------------------------------------------------------------------
@@ -140,12 +124,6 @@ extract_larsoft_waveforms(std::string const& tag,
             std::cout << "Digits vector is empty" << std::endl;
         }
         for(auto&& digit: digits){
-
-            if(onlySignal &&
-               channelsWithSignal.find(digit.Channel())==channelsWithSignal.end()){
-                continue;
-            }
-
             // Check that the waveform has the same number of samples
             //as all the previous waveforms
             if(waveform_nsamples<0){ waveform_nsamples=digit.Samples(); }
@@ -217,12 +195,9 @@ int main(int argc, char** argv)
         ("output,o", po::value<string>(), "base output file name. Individual output files will be created for each event, with \"_evtN\" inserted before the extension, or at the end if there is no extension")
         ("tag, g", po::value<string>()->default_value("tpcrawdecoder:daq:DetsimStage1"),
                    "input tag (aka \"module label:product instance name: process name\") for raw::RawDigits")
-        ("tag_sim, s", po::value<string>()->default_value("tpcrawdecoder:simpleSC:Detsim"),
-                   "input tag (aka \"module label:product instance name: process name\") for sim::SimChannels")
         ("nevent,n", po::value<int>()->default_value(1), "number of events to save")
         ("nskip,k", po::value<int>()->default_value(0), "number of events to skip")
         ("numpy", "use numpy output format instead of text")
-        ("onlysignal", "only output channels with true signal")
         ("trig", po::value<int>()->default_value(-1), "select events with given trigger type")
         ("ts", "add event timestamp to filename")
         ("clear", "subtract pedestal")
@@ -250,13 +225,11 @@ int main(int argc, char** argv)
     }
 
     extract_larsoft_waveforms(vm["tag"].as<string>(),
-                              vm["tag_sim"].as<string>(),
                               vm["input"].as<string>(),
                               vm["output"].as<string>(),
                               vm.count("numpy") ? Format::Numpy : Format::Text,
                               vm["nevent"].as<int>(),
                               vm["nskip"].as<int>(),
-                              vm.count("onlysignal"),
                               vm["trig"].as<int>(),
                               vm.count("ts"),
                               vm.count("clear"));
