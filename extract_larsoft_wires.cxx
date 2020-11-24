@@ -83,7 +83,7 @@ void save_to_file(std::string const& outfile,
 //
 // event_no channel_no tdc total_charge
 void
-extract_larsoft_hits(std::string const& tag,
+extract_larsoft_wires(std::string const& tag,
                      std::string const& filename,
                      std::string const& outfile,
                      Format format,
@@ -97,7 +97,7 @@ extract_larsoft_hits(std::string const& tag,
 
     int iev=0;
     for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
-        vector<vector<int> > samples;
+        vector<vector<float> > samples;
 
         if(iev<nskip) {
            ++iev;
@@ -153,11 +153,8 @@ extract_larsoft_hits(std::string const& tag,
             samples.push_back({
                     (float)ev.eventAuxiliary().event(), (float)wire.Channel()
                         });
-            float sample;
-            for(size_t i=0; i<waveform_nsamples; ++i){
-                sample = wire.Signal()[std::min((int)i, waveform_nsamples-1)];
-                samples.back().push_back(sample);
-            }
+            std::vector<float> sample = wire.Signal();
+            samples.back().insert(samples.back().end(), sample.begin(), sample.end());
         } // end loop over digits (=?channels)
 
         std::string this_outfile(outfile);
@@ -170,7 +167,7 @@ extract_larsoft_hits(std::string const& tag,
         iss << this_outfile.substr(0, dotpos) << "_evt"<< ev.eventAuxiliary().event()
               << outfile.substr(dotpos, outfile.length()-dotpos) << ext;
         std::cout << "Writing event " << ev.eventAuxiliary().event() << " to file " << iss.str() << std::endl;
-        save_to_file<int>(iss.str(), samples, format, false);
+        save_to_file<float>(iss.str(), samples, format, false);
         
         ++iev;
     } // end loop over events
@@ -183,7 +180,7 @@ int main(int argc, char** argv)
         ("help,h", "produce help message")
         ("input,i", po::value<string>(), "input file name")
         ("output,o", po::value<string>(), "base wire output file name")
-        ("tag, g", po::value<string>()->default_value("twclsdatanfsp:gauss:Reco"),
+        ("tag, g", po::value<string>()->default_value("wclsdatasp:gauss:Reco"),
                    "input tag (aka \"module label:product instance name: process name\") for recob::Wire")
         ("nevent,n", po::value<int>()->default_value(1), "number of events to save")
         ("nskip,k", po::value<int>()->default_value(0), "number of events to skip")
@@ -212,7 +209,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    extract_larsoft_hits(vm["tag"].as<string>(),
+    extract_larsoft_wires(vm["tag"].as<string>(),
                          vm["input"].as<string>(),
                          vm["output"].as<string>(),
                          vm.count("numpy") ? Format::Numpy : Format::Text,
