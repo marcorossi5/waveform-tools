@@ -1,10 +1,14 @@
 import os
+import argparse
 import numpy as np
 import glob
 from time import time as tm
 from tqdm import tqdm
 
-folder = "/nfs/public/romarco/datasets/20201124"
+parser = argparse.ArgumentParser()
+parser.add_argument("--path", "-p", default="/nfs/public/romarco/datasets/20201124/val/evts",
+                    type=str, help='Dataset directory path to convert')
+args = vars(parser.parse_args())
 
 napas = 6
 istep = 800
@@ -14,7 +18,8 @@ numch = apastep*napas
 tdcs = 6000
 
 def main():
-    for fname in tqdm(glob.glob(f"{folder}/val/evts/p*_simch_*")):
+    fnames = os.path.join(args["path"], "p*_simch_ev*")
+    for fname in tqdm(glob.glob(fnames)):
         hits = np.load(fname)
         labels = np.zeros([numch, tdcs])
         assert hits[:,1].min() >= 0
